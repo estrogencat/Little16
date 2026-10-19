@@ -4,6 +4,7 @@
 #define L16_RELOAD "com.michaelmelita1.little16/reload"
 
 static NSDictionary *prefs;
+
 static BOOL advanced;
 
 static void LoadPrefs(void) {
@@ -227,6 +228,7 @@ static BOOL ViewContainsClass(UIView *view, Class targetClass, int depth) {
 @interface _UIStatusBarRegion : NSObject
 @property (nonatomic, copy) NSString *identifier;
 @property (nonatomic, retain) id layout;
+@property (nonatomic, retain) UILayoutGuide *layoutGuide;
 @end
 
 %hook _UIStatusBarVisualProvider_Split
@@ -241,6 +243,40 @@ static BOOL ViewContainsClass(UIView *view, Class targetClass, int depth) {
         stack.alignment = 3;
         if ([old respondsToSelector:@selector(interspace)]) stack.interspace = old.interspace;
         layout.horizontalLayout = stack;
+    }
+    return regions;
+}
+%end
+
+%end
+
+%group Pill
+
+@interface _UIStatusBarVisualProvider_Split : NSObject
+- (double)leadingCenteringEdgeInset;
+- (NSDirectionalEdgeInsets)_edgeInsetsFromCenteringEdgeInset:(double)inset trailing:(BOOL)trailing;
+@end
+
+%hook _UIStatusBarVisualProvider_Split
+- (NSArray *)setupInContainerView:(id)view {
+    NSArray *regions = %orig;
+    CGFloat const shift = TimeInset() - [self _edgeInsetsFromCenteringEdgeInset:[self leadingCenteringEdgeInset] trailing:NO].leading;
+    UILayoutGuide *pill = nil, *leading = nil;
+    for (_UIStatusBarRegion *region in regions) {
+        if (![region isKindOfClass:%c(_UIStatusBarRegion)]) continue;
+        if ([region.identifier isEqualToString:@"pill"]) pill = region.layoutGuide;
+        else if ([region.identifier isEqualToString:@"leading"]) leading = region.layoutGuide;
+    }
+    if (!pill) return regions;
+    UIView *owner = pill.owningView ?: view;
+    for (NSLayoutConstraint *c in owner.constraints) {
+        if (c.firstItem != pill) continue;
+        if (c.firstAttribute == NSLayoutAttributeCenterX && [c.secondItem isKindOfClass:[UIView class]]) {
+            c.constant += shift;
+        } else if (leading && c.firstAttribute == NSLayoutAttributeBottom && [c.secondItem isKindOfClass:[UILayoutGuide class]] && [[c.secondItem identifier] isEqualToString:@"cutout"]) {
+            c.active = NO;
+            [pill.bottomAnchor constraintEqualToAnchor:leading.topAnchor constant:4.67].active = YES;
+        }
     }
     return regions;
 }
@@ -284,6 +320,7 @@ static void PrefsChanged(CFNotificationCenterRef center, void *observer, CFStrin
         Class provider = NSClassFromString([@"_UIStatusBarVisualProvider_" stringByAppendingString:ProviderName()]);
         if (provider) {
             %init(StatusBar, L16Provider = provider);
+            %init(Pill);
             if (PrefBool(@"clockLeftAligned", NO)) %init(ClockLeft);
         }
     }
