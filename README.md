@@ -8,8 +8,7 @@ Tested on iPhone 6S, 7 & 8. May be compatible with SE 2 on iOS 26. Give it a sho
 
 ## Features
 * iPhone X Gestures.
-* iPad status bar.
-* iPad Dock
+* iPhone X status bar.
 * Lockscreen Quick Actions 
 
 ## Credits

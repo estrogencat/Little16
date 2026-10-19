@@ -6,7 +6,8 @@
 	<dict>
 		<key>Bundles</key>
 		<array>
-	<string>com.apple.springboard</string>
+			<string>com.apple.springboard</string>
+			<string>com.apple.ScreenshotServicesService</string>
 		</array>
 	</dict>
 </dict>

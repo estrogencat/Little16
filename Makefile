@@ -7,6 +7,10 @@ include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = Little16
 Little16_FILES = Tweak.xm
+Little16_CFLAGS = -fobjc-arc
 
 include $(THEOS_MAKE_PATH)/tweak.mk
+
+SUBPROJECTS += Little16Prefs
+
 include $(THEOS_MAKE_PATH)/aggregate.mk
